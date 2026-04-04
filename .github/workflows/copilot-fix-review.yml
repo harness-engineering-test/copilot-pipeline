@@ -1,0 +1,9 @@
+# レビュー指摘の自動修正
+name: Copilot Fix Review
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+# 後続フェーズで実装
+jobs: {}

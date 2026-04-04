@@ -1,0 +1,9 @@
+# プレビュー環境デプロイ
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# 後続フェーズで実装
+jobs: {}

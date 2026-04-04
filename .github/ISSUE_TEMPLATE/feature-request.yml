@@ -1,0 +1,23 @@
+name: 機能要求
+description: 新機能の要求を起票する
+labels: ["要求"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景・課題
+      description: なぜこの機能が必要か
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: ゴール
+      description: 何が実現されれば完了か
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: 制約・考慮事項
+      description: 技術制約、ビジネス制約

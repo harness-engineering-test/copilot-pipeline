@@ -1,0 +1,9 @@
+# ラベル付与時にCopilotにIssueをアサインする
+name: Copilot Assign on Label
+
+on:
+  issues:
+    types: [labeled]
+
+# 後続フェーズで実装
+jobs: {}

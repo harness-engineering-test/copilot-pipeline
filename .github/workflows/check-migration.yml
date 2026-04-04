@@ -1,0 +1,10 @@
+# マイグレーションチェック
+name: Check Migration
+
+on:
+  pull_request:
+    paths:
+      - "**/*migration*"
+
+# 後続フェーズで実装
+jobs: {}

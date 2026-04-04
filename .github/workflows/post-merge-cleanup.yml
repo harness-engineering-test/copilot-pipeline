@@ -1,0 +1,9 @@
+# マージ後のクリーンアップ
+name: Post Merge Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+# 後続フェーズで実装
+jobs: {}

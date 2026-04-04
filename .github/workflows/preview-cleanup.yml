@@ -1,0 +1,9 @@
+# プレビュー環境クリーンアップ
+name: Preview Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+# 後続フェーズで実装
+jobs: {}

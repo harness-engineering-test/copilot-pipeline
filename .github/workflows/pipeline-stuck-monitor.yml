@@ -1,0 +1,9 @@
+# パイプライン停滞監視
+name: Pipeline Stuck Monitor
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # 6時間ごと
+
+# 後続フェーズで実装
+jobs: {}

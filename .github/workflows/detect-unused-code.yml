@@ -1,0 +1,9 @@
+# 未使用コード検出
+name: Detect Unused Code
+
+on:
+  schedule:
+    - cron: "0 0 * * 1" # 毎週月曜
+
+# 後続フェーズで実装
+jobs: {}

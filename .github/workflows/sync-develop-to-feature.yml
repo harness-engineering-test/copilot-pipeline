@@ -1,0 +1,9 @@
+# developからfeatureブランチへの同期
+name: Sync Develop to Feature
+
+on:
+  push:
+    branches: [develop]
+
+# 後続フェーズで実装
+jobs: {}

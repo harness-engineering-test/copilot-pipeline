@@ -1,0 +1,9 @@
+# 要件定義フェーズのワークフロー
+name: Copilot Requirements
+
+on:
+  issues:
+    types: [labeled]
+
+# 後続フェーズで実装
+jobs: {}

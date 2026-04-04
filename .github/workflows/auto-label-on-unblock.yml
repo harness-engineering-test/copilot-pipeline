@@ -1,0 +1,9 @@
+# ブロック解除時に自動ラベル付与
+name: Auto Label on Unblock
+
+on:
+  issues:
+    types: [unlabeled]
+
+# 後続フェーズで実装
+jobs: {}

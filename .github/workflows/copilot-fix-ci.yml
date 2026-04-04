@@ -1,0 +1,9 @@
+# CI失敗時にCopilotへ修正依頼
+name: Copilot Fix CI
+
+on:
+  check_suite:
+    types: [completed]
+
+# 後続フェーズで実装
+jobs: {}
