@@ -1,9 +1,30 @@
-# レビュー指摘の自動修正
-name: Copilot Fix Review
+name: Auto-fix Review Comments
 
 on:
   pull_request_review:
     types: [submitted]
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  fix-review:
+    if: >-
+      github.event.review.user.login == 'copilot[bot]' &&
+      github.event.review.state == 'commented'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for critical issues and request fix
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMENTS=$(gh api \
+            repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/${{ github.event.review.id }}/comments \
+            --jq '.[].body')
+
+          if echo "$COMMENTS" | grep -qi "critical\|high\|security\|bug"; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --body "@copilot Please fix the critical and high severity issues identified in the code review. Only modify files that are part of this PR."
+          fi

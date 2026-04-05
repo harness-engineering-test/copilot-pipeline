@@ -1,9 +1,46 @@
-# CI失敗時にCopilotへ修正依頼
-name: Copilot Fix CI
+name: Fix CI Failures
 
 on:
   check_suite:
     types: [completed]
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  fix-ci:
+    if: >-
+      github.event.check_suite.conclusion == 'failure' &&
+      github.event.check_suite.head_branch != 'main' &&
+      github.event.check_suite.head_branch != 'develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get PR for this branch
+        id: get-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ github.event.check_suite.head_branch }}"
+          PR_NUM=$(gh pr list --repo ${{ github.repository }} \
+            --head "$BRANCH" --json number -q '.[0].number')
+          echo "pr_number=$PR_NUM" >> "$GITHUB_OUTPUT"
+
+      - name: Ask Copilot to fix CI
+        if: steps.get-pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr view ${{ steps.get-pr.outputs.pr_number }} \
+            --repo ${{ github.repository }} \
+            --json comments --jq '[.comments[] | select(.body | contains("CI is failing"))] | length')
+
+          if [ "$EXISTING" -lt 3 ]; then
+            gh pr comment ${{ steps.get-pr.outputs.pr_number }} \
+              --repo ${{ github.repository }} \
+              --body "@copilot CI is failing. Please analyze the failure logs and fix the issues. Focus on: lint errors first, then type errors, then test failures. If it's a transient failure, just re-run the workflow."
+          else
+            gh pr edit ${{ steps.get-pr.outputs.pr_number }} \
+              --repo ${{ github.repository }} \
+              --add-label "人間の対応が必要"
+          fi

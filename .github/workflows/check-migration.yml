@@ -1,10 +1,43 @@
-# マイグレーションチェック
 name: Check Migration
 
 on:
   pull_request:
     paths:
-      - "**/*migration*"
+      - "backend/ent/migrate/migrations/**"
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-drop-column:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for DROP COLUMN in new migrations
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          FILES=$(git diff --name-only --diff-filter=A \
+            "$BASE_SHA" "$HEAD_SHA" -- "backend/ent/migrate/migrations/*.sql")
+
+          WARNING=0
+          DETAILS=""
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            if grep -qi "DROP COLUMN" "$file"; then
+              WARNING=$((WARNING + 1))
+              DETAILS="$DETAILS\n- $file"
+            fi
+          done <<< "$FILES"
+
+          if [ "$WARNING" -gt 0 ]; then
+            gh pr comment ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} \
+              --body "⚠️ **破壊的変更検出**: $WARNING 件の DROP COLUMN がマイグレーションに含まれています。$DETAILS\n\n既存データとの互換性を確認してください。"
+          fi
