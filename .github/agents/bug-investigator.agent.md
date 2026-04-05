@@ -8,6 +8,8 @@ tools:
 mcp-servers:
   browser:
     url: ${{ secrets.BROWSER_MCP_URL }}
+    tools:
+      - "*"
 ---
 
 あなたはバグ調査の専門家です。修正は一切行わず、原因分析に集中してください。
