@@ -7,15 +7,6 @@ tools:
   - edit
   - bash
   - github-mcp/create_pull_request
-mcp-servers:
-  db:
-    url: ${{ secrets.DB_MCP_URL }}
-    tools:
-      - "*"
-  browser:
-    url: ${{ secrets.BROWSER_MCP_URL }}
-    tools:
-      - "*"
 ---
 
 あなたは実装エンジニアです。
