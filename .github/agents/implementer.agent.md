@@ -10,8 +10,12 @@ tools:
 mcp-servers:
   db:
     url: ${{ secrets.DB_MCP_URL }}
+    tools:
+      - "*"
   browser:
     url: ${{ secrets.BROWSER_MCP_URL }}
+    tools:
+      - "*"
 ---
 
 あなたは実装エンジニアです。

@@ -7,6 +7,10 @@ on:
 permissions:
   issues: write
 
+env:
+  COPILOT_ASSIGN_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
+  GITHUB_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   assign-implement:
     if: github.event.label.name == 'copilot:implement'
@@ -17,9 +21,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Assign issue to Copilot Cloud Agent
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
@@ -36,9 +39,8 @@ jobs:
             }'
 
       - name: Update labels
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           gh issue edit ${{ github.event.issue.number }} \
             --remove-label "copilot:implement" \
             --add-label "実装中" \
@@ -50,9 +52,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Assign to Requirements Agent
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
@@ -73,9 +74,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Assign to Design Agent
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
@@ -96,9 +96,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Assign to Task Splitter Agent
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
@@ -119,9 +118,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Assign to Bug Investigator
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
