@@ -1,28 +1,3 @@
-name: Post-merge Cleanup
-
-on:
-  pull_request:
-    types: [closed]
-
-permissions:
-  issues: write
-
-jobs:
-  cleanup:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Close linked issues
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_BODY="${{ github.event.pull_request.body }}"
-          ISSUE_NUMS=$(echo "$PR_BODY" | grep -oiE '(closes|fixes|resolves) #[0-9]+' | grep -oE '[0-9]+' || true)
-
-          for NUM in $ISSUE_NUMS; do
-            gh issue close "$NUM" --repo "${{ github.repository }}" || true
-          done
-*** Add File: c:\Users\yuzut\OneDrive\デスクトップ\harness-engineering-test\.github\workflows\create-feature-pr.yml
 name: Create Feature PR
 
 on:

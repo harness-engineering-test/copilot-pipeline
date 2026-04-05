@@ -1,9 +1,137 @@
-# ラベル付与時にCopilotにIssueをアサインする
-name: Copilot Assign on Label
+name: Label-driven Copilot Assignment
 
 on:
   issues:
     types: [labeled]
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  issues: write
+
+jobs:
+  assign-implement:
+    if: github.event.label.name == 'copilot:implement'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: copilot-assign-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Assign issue to Copilot Cloud Agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/assignees \
+            --input - <<< '{
+              "assignees": ["copilot-swe-agent[bot]"],
+              "agent_assignment": {
+                "target_repo": "${{ github.repository }}",
+                "base_branch": "develop",
+                "custom_instructions": "Follow the implementation instructions in the issue body. Reference copilot-instructions.md for coding standards.",
+                "custom_agent": "implementer"
+              }
+            }'
+
+      - name: Update labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "copilot:implement" \
+            --add-label "実装中" \
+            --repo ${{ github.repository }}
+
+  assign-requirements:
+    if: github.event.label.name == '要件定義作成'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assign to Requirements Agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/assignees \
+            --input - <<< '{
+              "assignees": ["copilot-swe-agent[bot]"],
+              "agent_assignment": {
+                "target_repo": "${{ github.repository }}",
+                "base_branch": "develop",
+                "custom_agent": "requirements-analyst"
+              }
+            }'
+
+  assign-design:
+    if: github.event.label.name == '設計作成'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assign to Design Agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/assignees \
+            --input - <<< '{
+              "assignees": ["copilot-swe-agent[bot]"],
+              "agent_assignment": {
+                "target_repo": "${{ github.repository }}",
+                "base_branch": "develop",
+                "custom_agent": "system-designer"
+              }
+            }'
+
+  assign-task-split:
+    if: github.event.label.name == 'タスク分割'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assign to Task Splitter Agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/assignees \
+            --input - <<< '{
+              "assignees": ["copilot-swe-agent[bot]"],
+              "agent_assignment": {
+                "target_repo": "${{ github.repository }}",
+                "base_branch": "develop",
+                "custom_agent": "task-splitter"
+              }
+            }'
+
+  assign-bug-investigation:
+    if: github.event.label.name == 'copilot:bug-investigate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Assign to Bug Investigator
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/assignees \
+            --input - <<< '{
+              "assignees": ["copilot-swe-agent[bot]"],
+              "agent_assignment": {
+                "target_repo": "${{ github.repository }}",
+                "base_branch": "develop",
+                "custom_agent": "bug-investigator"
+              }
+            }'

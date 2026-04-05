@@ -1,9 +1,47 @@
-# ブロック解除時に自動ラベル付与
-name: Auto Label on Unblock
+name: Auto-label on Unblock
 
 on:
   issues:
-    types: [unlabeled]
+    types: [closed]
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  issues: write
+
+jobs:
+  unblock-dependents:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and unblock dependent issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CLOSED_ISSUE: ${{ github.event.issue.number }}
+        run: |
+          OPEN_ISSUES=$(gh issue list --repo "$REPO" --state open \
+            --json number,body --jq '.[].number' --limit 200)
+
+          for ISSUE_NUM in $OPEN_ISSUES; do
+            BODY=$(gh issue view "$ISSUE_NUM" --repo "$REPO" --json body -q '.body')
+
+            if echo "$BODY" | grep -qi "blocked by #$CLOSED_ISSUE"; then
+              ALL_BLOCKERS=$(echo "$BODY" | grep -oiE 'blocked by #[0-9]+' | grep -oE '[0-9]+' || true)
+              REMAINING=0
+
+              for BLOCKER_NUM in $ALL_BLOCKERS; do
+                if [ "$BLOCKER_NUM" != "$CLOSED_ISSUE" ]; then
+                  STATE=$(gh issue view "$BLOCKER_NUM" --repo "$REPO" \
+                    --json state -q '.state' 2>/dev/null || echo "OPEN")
+                  if [ "$STATE" = "OPEN" ]; then
+                    REMAINING=$((REMAINING + 1))
+                  fi
+                fi
+              done
+
+              if [ "$REMAINING" -eq 0 ]; then
+                echo "All blockers resolved for #$ISSUE_NUM - adding copilot:implement label"
+                gh issue edit "$ISSUE_NUM" --add-label "copilot:implement" --repo "$REPO"
+              else
+                echo "#$ISSUE_NUM still has $REMAINING open blockers"
+              fi
+            fi
+          done
