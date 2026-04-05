@@ -1383,12 +1383,15 @@ git push origin develop
 コードだけでは完了しない設定がある。以下は GitHub UI で有効化する:
 
 1. **Copilot Code Review Ruleset**
-  - Settings → Rules → Rulesets
-  - `main` / `develop` を対象にする
-  - **Automatically request Copilot code review** を有効化する
+
+- Settings → Rules → Rulesets
+- `main` / `develop` を対象にする
+- **Automatically request Copilot code review** を有効化する
+
 2. **Auto-merge**
-  - Settings → General → Pull Requests
-  - **Allow auto-merge** を有効化する
+
+- Settings → General → Pull Requests
+- **Allow auto-merge** を有効化する
 
 加えて、Issue assign を workflow から実行する場合は **Repository secret** を 1 つ追加する:
 
@@ -1413,29 +1416,130 @@ git push origin develop
 タイトル: [TEST] Phase 10 smoke test
 
 ## 背景
+
 パイプラインの最小動作確認を行う
 
 ## やること
+
 README に smoke test 用の 1 行を追加する
 
 ## 完了条件
+
 - Label-driven Copilot Assignment workflow が起動する
 - Copilot が Issue に assign される
 ```
 
-### 10-4. ここで失敗したら確認すること
+### 10-4. PR 側のスモークテスト
+
+Issue 起点の assign が成功したら、次は PR 側の設定が有効かを確認する。
+
+作業ツリーに未コミット差分がある場合は、隔離した branch / worktree で試す。
+
+最小テスト手順:
+
+```bash
+git checkout main
+git pull origin main
+git switch -c phase10-pr-smoke
+echo "\nSmoke test line" >> README.md
+git add README.md
+git commit -m "test: phase 10 pr smoke"
+git push -u origin phase10-pr-smoke
+gh pr create \
+  --base main \
+  --head phase10-pr-smoke \
+  --title "[TEST] Phase 10 PR smoke test" \
+  --body "Copilot review と auto-merge の動作確認用 PR"
+```
+
+期待する結果:
+
+1. PR 作成後に Copilot review が自動で request される
+2. `Review new pushes` を有効化していれば、追加 push で再レビューされる
+3. PR 画面で `Enable auto-merge` が選択可能になる
+
+### 10-5. 一気に試す E2E テスト
+
+入口から出口までをまとめて確認したい場合は、Issue 作成から PR 確認までを 1 本で通して試す。
+
+手順:
+
+1. テスト Issue を 1 件作成する
+2. `copilot:implement` ラベルを付ける
+3. `copilot-assign-on-label.yml` が起動することを確認する
+4. Issue の assignee に Copilot が追加され、ラベルが `実装中` に変わることを確認する
+5. Copilot が変更を作成し、branch / commit / PR を作るのを待つ
+6. 作成された PR に Copilot review が自動 request されることを確認する
+7. PR 画面で `Enable auto-merge` が選択可能なことを確認する
+
+最小の Issue 例:
+
+```md
+タイトル: [TEST] Phase 10 end-to-end smoke test
+
+## 背景
+
+Copilot パイプラインの end-to-end 動作確認を行う
+
+## やること
+
+README に 1 行だけ追記する
+
+## 完了条件
+
+- Copilot が Issue に assign される
+- Copilot が PR を作成する
+- Copilot review が自動 request される
+- auto-merge が有効化できる
+```
+
+### 10-6. 一気に試す場合の確認事項
+
+Issue 作成から PR までをまとめて試す場合は、以下を順番に確認する。
+
+1. Issue に `copilot:implement` ラベルが付いているか
+2. `Label-driven Copilot Assignment` workflow が success になっているか
+3. Issue の assignee に Copilot が入っているか
+4. Issue のラベルが `実装中` に変わっているか
+5. Copilot が branch または PR を作成したか
+6. PR に Copilot review が自動で request されたか
+7. PR で `Enable auto-merge` が表示されるか
+8. `Review new pushes` を有効化した場合、追加 push で再レビューされるか
+
+### 10-7. できていると判断する条件
+
+Phase 10 は、以下を満たしたら完了とみなしてよい。
+
+- テスト Issue で Copilot assign が 1 回成功する
+- テスト PR で Copilot review が自動 request される
+- テスト PR で auto-merge を有効化できる
+- `develop` ブランチ、Ruleset、Repository secret が揃っている
+
+### 10-8. ここで失敗したら確認すること
 
 1. `develop` ブランチが存在するか
 2. `GITHUB_TOKEN` に必要権限があるか
 3. ラベル名が workflow の条件と完全一致しているか
 4. Copilot Cloud Agent が利用可能なプランか
 5. `COPILOT_ASSIGN_TOKEN` secret が設定されているか
+6. Ruleset が `Active` で、対象 branch に `main` / `develop` が入っているか
+7. `Automatically request Copilot code review` が ON になっているか
+8. Repository の `Allow auto-merge` が ON になっているか
 
-### 10-5. Phase 10 完了条件
+#### 単独検証時の注意
+
+- **1人しか write 権限ユーザーがいないリポジトリでは、`Required approvals: 1` を auto-merge 確認用に入れない方がよい**
+- Copilot coding agent が作成した PR では、**変更に関与したユーザー本人の Approve は承認条件を満たさない** 場合がある
+- 単独検証で auto-merge を確認したい場合は以下のどちらかにする:
+  1. **別の write 権限ユーザー**に Approve してもらう
+  2. `Required approvals` は追加せず、PR の Conversation に **enabled auto-merge** と **This pull request will merge automatically when all requirements are met** が出ることを確認して完了扱いにする
+
+### 10-9. Phase 10 完了条件
 
 - `develop` ブランチが存在する
 - Ruleset と auto-merge が有効
 - テスト Issue で assign workflow が 1 回成功
+- テスト PR で Copilot review と auto-merge の動作が確認できる
 - 失敗時の確認ポイントがチームで共有されている
 
 ---
@@ -1446,3 +1550,111 @@ README に smoke test 用の 1 行を追加する
 2. **エージェント間の直接連携**: Copilot にはエージェント同士が直接通信する仕組みはない。ラベル付与 → Actions発火 → 次のエージェントassign、というActionsベースのオーケストレーションで代替する。
 3. **実行時間**: Copilot Cloud Agent のセッションには時間制限がある。巨大な変更は分割が必須。
 4. **コスト**: Copilot Pro+ の premium request 枠を超えると追加課金。大量のエージェント並列実行時は枠の管理が必要。
+
+---
+
+## トラブルシューティング & 実際にハマったこと
+
+Phase 10 のスモークテストを通す過程で実際に遭遇した問題と解決策をまとめる。
+
+### 1. Custom Agent の `mcp-servers` 定義でエージェントが起動しない
+
+**症状**: Copilot Cloud Agent に Issue を assign しても、エージェントが何も行動しない（PR もコメントも作成されない）。
+
+**原因**: `implementer.agent.md` と `bug-investigator.agent.md` の YAML frontmatter に `mcp-servers:` セクションを記述していたが、Copilot Cloud Agent が対応していない形式だった。エージェントがファイルを読み込む段階でエラーになり、処理が開始されなかった。
+
+```yaml
+# NG — この形式は Cloud Agent で無効
+mcp-servers:
+  db:
+    url: ${{ secrets.DB_MCP_URL }}
+  browser:
+    url: ${{ secrets.BROWSER_MCP_URL }}
+```
+
+**解決**: `mcp-servers:` セクションを agent ファイルから削除した。MCP 接続が必要な場合は `.github/copilot-mcp.json` で別途設定する。
+
+---
+
+### 2. `GITHUB_TOKEN` では `agent_assignment` 付き assign API が 403 になる
+
+**症状**: `copilot-assign-on-label.yml` の assign ステップが `403 Forbidden` で失敗する。
+
+**原因**: `GITHUB_TOKEN` のデフォルト権限では、`agent_assignment` ペイロードを含む assign API リクエストが拒否される場合がある。
+
+**解決**: Repository secret に `COPILOT_ASSIGN_TOKEN`（`repo` 権限を持つ Personal Access Token）を追加し、assign 系 workflow ではこの secret を使用する。
+
+```yaml
+env:
+  GH_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
+```
+
+---
+
+### 3. Preview Deploy workflow が preview ラベルのない PR でも run を生成する
+
+**症状**: preview ラベルを付けていない PR でも、`Preview Deploy` workflow の run が作成され、「Approve workflows to run」の承認 UI が表示される。
+
+**原因**: workflow の `on` トリガーに `synchronize` を含めていたため、PR への push があるたびに run が作成される。job レベルの `if: contains(... 'preview')` で実際のデプロイはスキップされるが、**workflow run 自体は作られる**。外部コントリビューター（bot 含む）からの PR では、run 作成時に承認が必要になる。
+
+```yaml
+# この設定だと synchronize のたびに run が作られる
+on:
+  pull_request:
+    types: [labeled, synchronize]
+```
+
+**解決案**（未実施）:
+
+- `synchronize` を除外して `labeled` のみにする（preview ラベル付与時だけ起動）
+- または workflow レベルで早期に条件判定する仕組みを入れる
+
+---
+
+### 4. Required approvals: 1 を設定すると単独検証で auto-merge できない
+
+**症状**: auto-merge を有効化しても、承認条件を満たせず PR がマージされない。
+
+**原因**: 1人しか write 権限ユーザーがいないリポジトリで `Required approvals: 1` を設定すると、**自分自身の Approve では承認条件を満たさない**。Copilot coding agent が作成した PR でも、リポジトリオーナーが操作に関与しているとみなされ、セルフ承認と扱われる場合がある。
+
+**解決**: 単独検証時は `Required approvals` を設定しない。auto-merge が有効化できること＋「This pull request will merge automatically when all requirements are met」が表示されることを確認して完了扱いにする。複数名で運用する場合は別メンバーに Approve してもらう。
+
+---
+
+### 5. 「Approve workflows to run」がマージをブロックする
+
+**症状**: PR の CI チェックが pending のまま進まず、auto-merge もブロックされる。Actions タブに「Approve and run」ボタンが表示される。
+
+**原因**: 外部コントリビューター（Copilot bot 含む）が作成した PR では、workflow に secrets アクセスがある場合、**初回は手動で workflow 実行を承認**する必要がある。これは GitHub のセキュリティ機能。
+
+**解決**: Actions タブ → 該当 run → 「Approve and run」をクリックして手動承認する。信頼できる bot からの PR であれば、Repository settings → Actions → General → 「Fork pull request workflows from outside collaborators」の設定を調整することも検討できる。
+
+---
+
+### 6. main と develop の同期が取れていないとエージェントが古い設定で動く
+
+**症状**: agent ファイルを修正したのに、Copilot Cloud Agent が修正前の挙動のまま動く。
+
+**原因**: agent ファイルの修正を `main` にコミットしたが、`develop` にマージしていなかった。`copilot-assign-on-label.yml` の `base_branch: develop` 指定により、Copilot Cloud Agent は **develop ブランチの agent ファイル**を参照する。
+
+**解決**: agent ファイルや `copilot-instructions.md` を修正した後は、必ず develop にもマージ/同期する。
+
+```bash
+git checkout develop
+git merge main
+git push origin develop
+```
+
+---
+
+### 7. まとめ: スモークテストを1発で通すためのチェックリスト
+
+初回セットアップ後、Phase 10 を実行する前に以下を確認する:
+
+- [ ] agent ファイルの frontmatter に未対応の `mcp-servers` 定義が含まれていないか
+- [ ] `COPILOT_ASSIGN_TOKEN` が Repository secret に設定されているか
+- [ ] `develop` ブランチが存在し、最新の agent ファイル/workflow が反映されているか
+- [ ] Ruleset が Active で、対象ブランチに `develop` が含まれているか
+- [ ] `Allow auto-merge` が ON になっているか
+- [ ] **単独検証の場合** `Required approvals` が 0 になっているか
+- [ ] preview-deploy workflow が不要な run を生成していないか（`synchronize` トリガーの確認）
