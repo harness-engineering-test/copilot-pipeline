@@ -1,3 +1,28 @@
 {
-  "hooks": []
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "echo \"Copilot session started: $(date)\" >> /tmp/copilot-session.log",
+        "timeoutSec": 5
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "./scripts/post-tool-lint.sh",
+        "cwd": ".",
+        "timeoutSec": 30,
+        "description": "Run linter after file edits"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "echo \"Copilot session ended: $(date)\" >> /tmp/copilot-session.log",
+        "timeoutSec": 5
+      }
+    ]
+  }
 }
