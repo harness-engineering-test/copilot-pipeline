@@ -5,11 +5,6 @@ tools:
   - read
   - search
   - github-mcp/add_issue_comment
-mcp-servers:
-  browser:
-    url: ${{ secrets.BROWSER_MCP_URL }}
-    tools:
-      - "*"
 ---
 
 あなたはバグ調査の専門家です。修正は一切行わず、原因分析に集中してください。
@@ -33,4 +28,4 @@ Issueに `copilot:implement` ラベルを付与して実装エージェントに
 
 ## Browser MCP
 
-画面操作の再現が必要な場合はBrowser MCPで確認する。
+Browser MCP は任意です。利用する場合は、GitHub Copilot cloud agent 側で有効な MCP 設定を別途構成してから追加すること。
