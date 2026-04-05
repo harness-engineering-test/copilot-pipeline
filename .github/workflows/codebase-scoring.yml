@@ -9,6 +9,10 @@ permissions:
   contents: read
   issues: write
 
+env:
+  COPILOT_ASSIGN_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
+  GITHUB_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   score:
     runs-on: ubuntu-latest
@@ -19,9 +23,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create scoring issue for Copilot
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           payload=$(jq -n \
             --arg title "[スコアリング] ${{ matrix.project }} - 週次品質レポート $(date +%Y-%m-%d)" \
             --arg body "## 対象\n\`${{ matrix.project }}/\` ディレクトリ\n\n## 評価観点（各10点満点）\n1. アーキテクチャ\n2. コード品質\n3. テスト\n4. セキュリティ\n5. パフォーマンス\n6. 運用性\n\n## 指示\n- 各観点でスコアを算出し、根拠を示してください\n- 総合ランク（S/A/B/C/D）を判定してください\n- 改善提案を優先度順に3つまで挙げてください\n- スコアが5点未満の観点があれば、改善Issueを別途起票してください" \

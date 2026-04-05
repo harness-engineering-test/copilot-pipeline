@@ -1352,6 +1352,91 @@ jobs:
 | **Week 2後半** | CI失敗自動修正 + バトンリレー + auto-merge                                | Phase 3, 4       |
 | **Week 3**     | プレビュー環境 + 残りAgent（designer, task-splitter） + Hooks + Skills    | Phase 2, 5, 6, 7 |
 | **Week 4**     | スコアリング + 不要コード検知 + パイプライン監視                          | Phase 8, 9       |
+| **Week 4後半** | develop整備 + GUI設定 + スモークテスト                                    | Phase 10         |
+
+---
+
+## Phase 10: 運用開始前チェック＆スモークテスト（Week 4後半）
+
+Phase 9 まででパイプライン本体はほぼ完成するが、実運用の前に最低限の有効化作業と動作確認を行う。
+
+### 10-1. develop ブランチを作成する
+
+以下の workflow は `develop` を前提に動く:
+
+- `copilot-assign-on-label.yml` の `base_branch: develop`
+- `create-feature-pr.yml` の `--base develop`
+- `sync-develop-to-feature.yml` の `on.push.branches: [develop]`
+- `codebase-scoring.yml` / `detect-unused-code.yml` の `base_branch: develop`
+
+初回のみ以下を実行する:
+
+```bash
+git checkout main
+git pull origin main
+git branch develop
+git push origin develop
+```
+
+### 10-2. GUI で有効化する設定
+
+コードだけでは完了しない設定がある。以下は GitHub UI で有効化する:
+
+1. **Copilot Code Review Ruleset**
+  - Settings → Rules → Rulesets
+  - `main` / `develop` を対象にする
+  - **Automatically request Copilot code review** を有効化する
+2. **Auto-merge**
+  - Settings → General → Pull Requests
+  - **Allow auto-merge** を有効化する
+
+加えて、Issue assign を workflow から実行する場合は **Repository secret** を 1 つ追加する:
+
+- Secret 名: `COPILOT_ASSIGN_TOKEN`
+- 値: `repo` 権限を持つ Personal Access Token
+
+`GITHUB_TOKEN` では `agent_assignment` 付き assign API が 403 になる場合があるため、Copilot assign 系 workflow ではこの secret を優先して使う。
+
+### 10-3. 最小スモークテスト
+
+最初の確認は、Issue を 1 件作って `copilot:implement` ラベルを付けるだけでよい。
+
+期待する結果:
+
+1. `copilot-assign-on-label.yml` が起動する
+2. Issue の assignee が `copilot-swe-agent[bot]` になる
+3. `copilot:implement` が外れ、`実装中` ラベルに置き換わる
+
+例:
+
+```md
+タイトル: [TEST] Phase 10 smoke test
+
+## 背景
+パイプラインの最小動作確認を行う
+
+## やること
+README に smoke test 用の 1 行を追加する
+
+## 完了条件
+- Label-driven Copilot Assignment workflow が起動する
+- Copilot が Issue に assign される
+```
+
+### 10-4. ここで失敗したら確認すること
+
+1. `develop` ブランチが存在するか
+2. `GITHUB_TOKEN` に必要権限があるか
+3. ラベル名が workflow の条件と完全一致しているか
+4. Copilot Cloud Agent が利用可能なプランか
+5. `COPILOT_ASSIGN_TOKEN` secret が設定されているか
+
+### 10-5. Phase 10 完了条件
+
+- `develop` ブランチが存在する
+- Ruleset と auto-merge が有効
+- テスト Issue で assign workflow が 1 回成功
+- 失敗時の確認ポイントがチームで共有されている
 
 ---
 

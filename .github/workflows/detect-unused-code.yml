@@ -8,14 +8,17 @@ on:
 permissions:
   issues: write
 
+env:
+  COPILOT_ASSIGN_TOKEN: ${{ secrets.COPILOT_ASSIGN_TOKEN }}
+  GITHUB_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   detect:
     runs-on: ubuntu-latest
     steps:
       - name: Create detection issue
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           payload=$(jq -n \
             --arg title "[不要コード検知] customer-mobile 週次チェック $(date +%Y-%m-%d)" \
             --arg body "## 指示\ncustomer-mobile/ 配下で以下を検出してください:\n- 未使用のexport\n- 未参照のコンポーネント\n- dead code（到達不能コード）\n- 未使用のimport\n\n検出結果をこのIssueにコメントし、削除PRを作成してください。" \
