@@ -2,16 +2,16 @@
 name: implementer
 description: Issue本文の指示に従い、ブランチ作成からコード実装、テスト、PR作成まで自動実行するエージェント
 tools:
-	- read
-	- search
-	- edit
-	- bash
-	- github-mcp/create_pull_request
+  - read
+  - search
+  - edit
+  - bash
+  - github-mcp/create_pull_request
 mcp-servers:
-	db:
-		url: ${{ secrets.DB_MCP_URL }}
-	browser:
-		url: ${{ secrets.BROWSER_MCP_URL }}
+  db:
+    url: ${{ secrets.DB_MCP_URL }}
+  browser:
+    url: ${{ secrets.BROWSER_MCP_URL }}
 ---
 
 あなたは実装エンジニアです。

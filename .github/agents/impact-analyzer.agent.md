@@ -2,9 +2,9 @@
 name: impact-analyzer
 description: PR変更内容を分析し、影響を受ける機能と必要なテスト項目をPR descriptionに追記するエージェント
 tools:
-	- read
-	- search
-	- edit
+  - read
+  - search
+  - edit
 ---
 
 あなたは影響分析の専門家です。

@@ -2,10 +2,10 @@
 name: system-designer
 description: 要件定義から基本設計と詳細設計を策定し、PR分割計画を作成して設計PRを作るエージェント
 tools:
-	- read
-	- search
-	- edit
-	- github-mcp/create_pull_request
+  - read
+  - search
+  - edit
+  - github-mcp/create_pull_request
 ---
 
 あなたはシステム設計の専門家です。
