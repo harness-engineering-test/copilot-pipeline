@@ -1,9 +1,46 @@
-# コードベーススコアリング
 name: Codebase Scoring
 
 on:
   schedule:
-    - cron: "0 0 * * 1" # 毎週月曜
+    - cron: "0 3 * * 1" # 毎週月曜 03:00 UTC
+  workflow_dispatch:
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [backend, customer-mobile, operator-frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create scoring issue for Copilot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          payload=$(jq -n \
+            --arg title "[スコアリング] ${{ matrix.project }} - 週次品質レポート $(date +%Y-%m-%d)" \
+            --arg body "## 対象\n\`${{ matrix.project }}/\` ディレクトリ\n\n## 評価観点（各10点満点）\n1. アーキテクチャ\n2. コード品質\n3. テスト\n4. セキュリティ\n5. パフォーマンス\n6. 運用性\n\n## 指示\n- 各観点でスコアを算出し、根拠を示してください\n- 総合ランク（S/A/B/C/D）を判定してください\n- 改善提案を優先度順に3つまで挙げてください\n- スコアが5点未満の観点があれば、改善Issueを別途起票してください" \
+            --arg repo "${{ github.repository }}" \
+            '{
+              title: $title,
+              body: $body,
+              labels: ["scoring"],
+              assignees: ["copilot-swe-agent[bot]"],
+              agent_assignment: {
+                target_repo: $repo,
+                base_branch: "develop",
+                custom_agent: "implementer"
+              }
+            }')
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues \
+            --input - <<< "$payload"

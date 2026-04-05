@@ -1,9 +1,24 @@
-# プレビュー環境クリーンアップ
 name: Preview Cleanup
 
 on:
   pull_request:
     types: [closed]
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    if: contains(github.event.pull_request.labels.*.name, 'preview')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Destroy preview environment
+        run: |
+          cd terraform/preview
+          terraform init \
+            -backend-config="key=preview/pr-${{ github.event.pull_request.number }}/terraform.tfstate"
+          terraform destroy -auto-approve \
+            -var="pr_number=${{ github.event.pull_request.number }}"

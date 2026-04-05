@@ -1,9 +1,48 @@
-# developからfeatureブランチへの同期
-name: Sync Develop to Feature
+name: Sync develop to feature branches
 
 on:
   push:
     branches: [develop]
+    paths:
+      - ".github/workflows/**"
+      - ".github/copilot-instructions.md"
+      - ".github/agents/**"
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to open PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          OPEN_PRS=$(gh pr list --repo ${{ github.repository }} \
+            --base develop --state open --json headRefName -q '.[].headRefName')
+
+          for BRANCH in $OPEN_PRS; do
+            echo "Syncing develop into $BRANCH"
+            git fetch origin "$BRANCH:$BRANCH" 2>/dev/null || continue
+            git checkout "$BRANCH" || continue
+            git merge develop --no-edit || {
+              echo "Conflict in $BRANCH - skipping"
+              git merge --abort
+              PR_NUM=$(gh pr list --repo ${{ github.repository }} --head "$BRANCH" --json number -q '.[0].number')
+              if [ -n "$PR_NUM" ]; then
+                gh pr comment "$PR_NUM" --repo ${{ github.repository }} \
+                  --body "@copilot There is a merge conflict with develop. Please resolve the conflicts, keeping changes from both branches where appropriate."
+              fi
+              continue
+            }
+            git push origin "$BRANCH" || true
+          done

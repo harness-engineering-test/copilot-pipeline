@@ -1,9 +1,41 @@
-# パイプライン停滞監視
 name: Pipeline Stuck Monitor
 
 on:
   schedule:
-    - cron: "0 */6 * * *" # 6時間ごと
+    - cron: "*/30 * * * *" # 30分間隔
+  workflow_dispatch:
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for stuck issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          STUCK=$(gh issue list --repo "$REPO" --label "実装中" \
+            --json number,updatedAt \
+            --jq '[.[] | select((now - (.updatedAt | fromdateiso8601)) > 7200)] | .[].number')
+
+          for ISSUE in $STUCK; do
+            RETRY_COUNT=$(gh issue view "$ISSUE" --repo "$REPO" --json comments \
+              --jq '[.comments[] | select(.body | contains("auto-retry"))] | length')
+
+            if [ "$RETRY_COUNT" -lt 2 ]; then
+              gh issue comment "$ISSUE" --repo "$REPO" \
+                --body "auto-retry: パイプライン停滞を検知しました。Copilotを再assignします。"
+              gh issue edit "$ISSUE" --repo "$REPO" \
+                --remove-label "実装中" \
+                --add-label "copilot:implement"
+            else
+              gh issue edit "$ISSUE" --repo "$REPO" \
+                --remove-label "実装中" \
+                --add-label "人間の対応が必要"
+              gh issue comment "$ISSUE" --repo "$REPO" \
+                --body "自動復旧の上限（2回）に達しました。人間の対応が必要です。"
+            fi
+          done

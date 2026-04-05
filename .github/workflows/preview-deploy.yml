@@ -1,9 +1,38 @@
-# プレビュー環境デプロイ
 name: Preview Deploy
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [labeled, synchronize]
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    if: contains(github.event.pull_request.labels.*.name, 'preview')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Deploy preview environment
+        run: |
+          cd terraform/preview
+          terraform init \
+            -backend-config="key=preview/pr-${{ github.event.pull_request.number }}/terraform.tfstate"
+          terraform apply -auto-approve \
+            -var="pr_number=${{ github.event.pull_request.number }}"
+
+      - name: Comment PR with preview URL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          BODY=$(cat <<EOF
+          **プレビュー環境が起動しました**
+          - オペレーター画面: https://pr-${PR_NUM}.operator.example.com
+          - API: https://pr-${PR_NUM}.api.example.com
+          EOF
+          )
+          gh pr comment "$PR_NUM" --repo ${{ github.repository }} --body "$BODY"

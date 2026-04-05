@@ -1,9 +1,40 @@
-# 未使用コード検出
 name: Detect Unused Code
 
 on:
   schedule:
-    - cron: "0 0 * * 1" # 毎週月曜
+    - cron: "0 4 * * 1" # 毎週月曜 04:00 UTC
+  workflow_dispatch:
 
-# 後続フェーズで実装
-jobs: {}
+permissions:
+  issues: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create detection issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          payload=$(jq -n \
+            --arg title "[不要コード検知] customer-mobile 週次チェック $(date +%Y-%m-%d)" \
+            --arg body "## 指示\ncustomer-mobile/ 配下で以下を検出してください:\n- 未使用のexport\n- 未参照のコンポーネント\n- dead code（到達不能コード）\n- 未使用のimport\n\n検出結果をこのIssueにコメントし、削除PRを作成してください。" \
+            --arg repo "${{ github.repository }}" \
+            '{
+              title: $title,
+              body: $body,
+              labels: ["cleanup"],
+              assignees: ["copilot-swe-agent[bot]"],
+              agent_assignment: {
+                target_repo: $repo,
+                base_branch: "develop",
+                custom_agent: "implementer"
+              }
+            }')
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/issues \
+            --input - <<< "$payload"
