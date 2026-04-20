@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  contents: read
   issues: write
 
 env:
@@ -16,7 +17,18 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     steps:
+      - name: Check target directory exists
+        id: check_target
+        run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
+          if gh api /repos/${{ github.repository }}/contents/customer-mobile >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create detection issue
+        if: steps.check_target.outputs.exists == 'true'
         run: |
           export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           payload=$(jq -n \
@@ -41,3 +53,7 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             /repos/${{ github.repository }}/issues \
             --input - <<< "$payload"
+
+      - name: Skip when customer-mobile is missing
+        if: steps.check_target.outputs.exists != 'true'
+        run: echo "customer-mobile/ does not exist in this repository. Skipping issue creation."
