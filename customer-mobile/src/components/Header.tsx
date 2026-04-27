@@ -1,7 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-
-// TouchableOpacity はこのコンポーネント内で使用していない（未使用 import）
+import { View, Text, StyleSheet } from 'react-native';
 
 interface HeaderProps {
   title: string;
