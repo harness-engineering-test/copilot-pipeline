@@ -1,0 +1,27 @@
+{
+  "name": "customer-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest"
+  },
+  "dependencies": {
+    "expo": "~51.0.0",
+    "expo-router": "~3.5.0",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.0",
+    "typescript": "^5.3.0"
+  },
+  "jest": {
+    "preset": "jest-expo"
+  }
+}
