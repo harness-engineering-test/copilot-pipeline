@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  contents: read
   issues: write
 
 env:
@@ -16,7 +17,21 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     steps:
+      - name: Check customer-mobile directory on develop
+        id: customer-mobile-check
+        run: |
+          export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
+
+          if gh api /repos/${{ github.repository }}/contents/customer-mobile?ref=develop >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "customer-mobile directory was not found on develop. Skipping issue creation."
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+
       - name: Create detection issue
+        if: steps.customer-mobile-check.outputs.exists == 'true'
         run: |
           export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           payload=$(jq -n \
