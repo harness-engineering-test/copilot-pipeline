@@ -1138,11 +1138,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  discover-projects:
+    runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.projects.outputs.projects }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: projects
+        run: |
+          projects=$(
+            printf '%s\n' backend customer-mobile operator-frontend |
+              while read -r project; do
+                if [ -d "$project" ]; then
+                  printf '%s\n' "$project"
+                fi
+              done |
+              jq -R -s -c 'split("\n") | map(select(length > 0))'
+          )
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+
   score:
+    needs: discover-projects
+    if: ${{ needs.discover-projects.outputs.projects != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project: [backend, customer-mobile, operator-frontend]
+        project: ${{ fromJson(needs.discover-projects.outputs.projects) }}
     steps:
       - uses: actions/checkout@v4
 
