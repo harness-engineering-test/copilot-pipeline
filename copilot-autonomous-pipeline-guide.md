@@ -1138,11 +1138,30 @@ on:
   workflow_dispatch:
 
 jobs:
+  discover-targets:
+    runs-on: ubuntu-latest
+    outputs:
+      projects: ${{ steps.discover.outputs.projects }}
+      has_projects: ${{ steps.discover.outputs.has_projects }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          projects="$(./scripts/list-score-targets.sh)"
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+          if [ "$projects" = "[]" ]; then
+            echo "has_projects=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_projects=true" >> "$GITHUB_OUTPUT"
+          fi
+
   score:
+    needs: discover-targets
+    if: needs.discover-targets.outputs.has_projects == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        project: [backend, customer-mobile, operator-frontend]
+        project: ${{ fromJson(needs.discover-targets.outputs.projects) }}
     steps:
       - uses: actions/checkout@v4
 
