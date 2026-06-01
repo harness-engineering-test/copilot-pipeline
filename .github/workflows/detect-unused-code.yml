@@ -16,7 +16,22 @@ jobs:
   detect:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Check customer-mobile directory
+        id: target
+        run: |
+          if [[ -d customer-mobile ]]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create detection issue
+        if: steps.target.outputs.exists == 'true'
         run: |
           export GH_TOKEN="${COPILOT_ASSIGN_TOKEN:-$GITHUB_TOKEN_FALLBACK}"
           payload=$(jq -n \
@@ -41,3 +56,7 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             /repos/${{ github.repository }}/issues \
             --input - <<< "$payload"
+
+      - name: Skip when target is missing
+        if: steps.target.outputs.exists != 'true'
+        run: echo "customer-mobile/ が存在しないため、この週次検知Issueは作成しません。"
