@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "CustomerApp",
+    "slug": "customer-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "customerapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.customermobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.example.customermobile"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
