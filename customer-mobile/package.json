@@ -1,0 +1,38 @@
+{
+  "name": "customer-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest --watchAll=false"
+  },
+  "dependencies": {
+    "expo": "~51.0.0",
+    "expo-router": "~3.5.0",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.1",
+    "@react-navigation/native": "^6.1.17",
+    "@react-navigation/native-stack": "^6.9.26",
+    "react-native-safe-area-context": "4.10.1",
+    "react-native-screens": "3.31.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.79",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "jest-expo": "~51.0.0",
+    "typescript": "~5.3.3"
+  },
+  "jest": {
+    "preset": "jest-expo"
+  },
+  "private": true
+}
